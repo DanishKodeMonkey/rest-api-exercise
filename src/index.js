@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 
 // we will import some data sets that we will use for this example
 // Not a real database, but good enough for the experiment.
@@ -27,6 +28,13 @@ const app = express();
 /* CORS is used to restrict access between web applications on a domain level. To work with this,
 we use a CORS package to apply a CORS header to every request by default. */
 app.use(cors());
+
+// Enable the use of express-built in middleware body-parser, to transform body types form our request object.
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// keep in mind that this covers another aspect of REST. To use only a single payload format (like JSON)
+// and stick to it!
 
 /* Set up some routes */
 
@@ -99,9 +107,30 @@ app.get('/messages/:messageId', (req, res) => {
 });
 
 app.post('/messages', (req, res) => {
-    return res.send('Received a POST HTTP method on messages resource');
-});
+    // Since we arent using a database, we will use uuid to create unique identifiers for new posts
+    const id = uuidv4();
 
+    // establish the message object
+    const message = {
+        // use id as a property in the message object.
+        id,
+        // extract text payload from body of request HTTP method
+        text: req.body.text,
+    };
+
+    // assign the message, in the messages object by identifier.
+    messages[id] = message;
+
+    // return new message
+    return res.send(message);
+});
+// And thanks to our earlier middleware setup, our API and server are able to parse these requests
+// to new messages!
+/* 
+❯ curl -X POST -H "Content-Type:application/json" http://localhost:3000/messages -d '{"text":"Hi again, World"}'
+{"id":"8c310788-ee3d-4bc4-986e-fe1b9f7ec4da","text":"Hi again, World"}%                          
+
+*/
 app.put('/messages/:messageId', (req, res) => {
     return res.send(`PUT HTTP method on user/${req.params.messageId} resource`);
 });
