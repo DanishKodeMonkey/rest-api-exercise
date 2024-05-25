@@ -34,8 +34,21 @@ app.use(cors());
 
 // An important aspect of REST is that every URI acts as a resource. like /users.
 app.get('/users', (req, res) => {
-    return res.send('Received a GET HTTP method on users resource');
+    return res.send(Object.values(users)); //Returns the entire contents of the users dataset
 });
+/* 
+❯ curl http://localhost:3000/users            
+[{"id":"1","username":"Robin Wieruch"},{"id":"2","username":"Dave Davids"}]%                     
+*/
+
+// Lets add another path ,that will return a specific user, based on the provided id
+app.get('/users/:userId', (req, res) => {
+    return res.send(users[req.params.userId]); // Returns a specific user based on the provided id
+});
+/* 
+❯ curl http://localhost:3000/users/1
+{"id":"1","username":"Robin Wieruch"}%                                                           
+*/
 
 app.post('/users', (req, res) => {
     return res.send('Received a POST HTTP method on users resource');
@@ -45,11 +58,11 @@ app.post('/users', (req, res) => {
 Naturally, commencing a put or delete operation, is done to a single part of a resource 
 instead of the whole collection. This is spcified with a :userid in the URI
 */
-app.put('/users/:userid', (req, res) => {
+app.put('/users/:userId', (req, res) => {
     return res.send(`PUT HTTP method on user/${req.params.userid} resource`);
 });
 
-app.delete('/users/:userid', (req, res) => {
+app.delete('/users/:userId', (req, res) => {
     return res.send(`DELETE HTTP method on user/${req.params.userid} resource`);
 });
 // ❯ curl -X DELETE http://localhost:3000/users/2
@@ -74,6 +87,34 @@ R for Read: HTTP GET
 U for Update: HTTP PUT
 D for Delete: HTTP DELETE
 */
+
+// The paths we define, also define the resources that the client will use. We can have as many or few as we need.
+// For instance, lets create another one for messages
+
+app.get('/messages', (req, res) => {
+    return res.send(Object.values(messages));
+});
+app.get('/messages/:messageId', (req, res) => {
+    return res.send(messages[req.params.messageId]);
+});
+
+app.post('/messages', (req, res) => {
+    return res.send('Received a POST HTTP method on messages resource');
+});
+
+app.put('/messages/:messageId', (req, res) => {
+    return res.send(`PUT HTTP method on user/${req.params.messageId} resource`);
+});
+
+app.delete('/messages/:messageId', (req, res) => {
+    return res.send(
+        `DELETE HTTP method on user/${req.params.messageId} resource`
+    );
+});
+
+// These paths work exactly like the users ones, but on a different resource.
+// ❯ curl -X DELETE http://localhost:3000/messages/1
+// --> DELETE HTTP method on messages/2 resource%
 
 /* Expose a port defined in a hidden, .env file to the express app */
 app.listen(process.env.PORT, () =>
