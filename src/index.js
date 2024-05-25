@@ -3,6 +3,18 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 
+// we will import some data sets that we will use for this example
+// Not a real database, but good enough for the experiment.
+import users from '../database/users';
+import messages from '../database/messages';
+
+// Express is ideal for creating and exposing APIs to communicate as a client to ea server application.
+// The key difference from a url routing direction to a API is the use of nouns rather than verbs, and
+// a returned resource in response.
+
+// Doing this, we can establish a clear chain of operations between the Client, and the rest of the service
+// Client -> (REST API -> Server) -> Database
+
 /* Establish a express app */
 const app = express();
 
@@ -17,40 +29,53 @@ we use a CORS package to apply a CORS header to every request by default. */
 app.use(cors());
 
 /* Set up some routes */
-// Express is ideal for creating and exposing APIs to communicate as a client to ea server application.
-// The key difference from a url routing direction to a API is the use of nouns rather than verbs, and
-// a returned resource in response.
 
-// the four main nouns to use are:
+// the four main nouns to use are: GET, POST, PUT and DELETE
 
-app.get('/', (req, res) => {
-    return res.send('Received a GET HTTP method');
+// An important aspect of REST is that every URI acts as a resource. like /users.
+app.get('/users', (req, res) => {
+    return res.send('Received a GET HTTP method on users resource');
 });
 
-app.post('/', (req, res) => {
-    return res.send('Received a POST HTTP method');
-});
-
-app.put('/', (req, res) => {
-    return res.send('Received a PUT HTTP method');
-});
-
-app.delete('/', (req, res) => {
-    return res.send('Received a DELETE HTTP method');
+app.post('/users', (req, res) => {
+    return res.send('Received a POST HTTP method on users resource');
 });
 
 /* 
-cURL'ing http://localhost:3000 will, by default, use a HTTP get method.
+Naturally, commencing a put or delete operation, is done to a single part of a resource 
+instead of the whole collection. This is spcified with a :userid in the URI
+*/
+app.put('/users/:userid', (req, res) => {
+    return res.send(`PUT HTTP method on user/${req.params.userid} resource`);
+});
+
+app.delete('/users/:userid', (req, res) => {
+    return res.send(`DELETE HTTP method on user/${req.params.userid} resource`);
+});
+// ❯ curl -X DELETE http://localhost:3000/users/2
+// --> DELETE HTTP method on user/2 resource%
+
+/* 
+cURL'ing http://localhost:3000/users will, by default, use a HTTP get method.
 We can however specify the HTTP method, using the -X (or --request) flag.
 Doing this, we can access different routes of the express application.
 Using its API endpoints with an URI
 */
 /* 
-This is one of the key aspects to REST: Using HTTP methods to perfor moperations on URIs, 
+This is another of the key aspects to REST: Using HTTP methods to perform operations on URIs, 
 most commonly refered to as CRUD operations for create, read, update and delete operations. 
 git */
 
-/* Expose a port defined in a hidden, safe, .env file to the express app */
+/* 
+Due to the distinct nature of APi practices, using nouns instead of verbs are required. 
+The direct connection between CRUD and REST can be determined as:
+C for Create: HTTP POST
+R for Read: HTTP GET
+U for Update: HTTP PUT
+D for Delete: HTTP DELETE
+*/
+
+/* Expose a port defined in a hidden, .env file to the express app */
 app.listen(process.env.PORT, () =>
     console.log(`Example app listening to port ${process.env.PORT}`)
 );
