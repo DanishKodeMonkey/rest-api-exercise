@@ -17,18 +17,38 @@ we use a CORS package to apply a CORS header to every request by default. */
 app.use(cors());
 
 /* Set up some routes */
-// This route points to the root (/) of the domain, and is the first thing we see when we visit the domain.
-// When someone req(quests) the root path / we res(pond) with a send method, sending 'Hello world'
-// to the user.
+// Express is ideal for creating and exposing APIs to communicate as a client to ea server application.
+// The key difference from a url routing direction to a API is the use of nouns rather than verbs, and
+// a returned resource in response.
+
+// the four main nouns to use are:
+
 app.get('/', (req, res) => {
-    res.send('Hello World!');
+    return res.send('Received a GET HTTP method');
 });
 
-// We could make any path we want this way, just as an example:
-app.get('/example', (req, res) => {
-    res.send('This is an example !');
+app.post('/', (req, res) => {
+    return res.send('Received a POST HTTP method');
 });
-// Going to localhost:3000/example now outputs this response.
+
+app.put('/', (req, res) => {
+    return res.send('Received a PUT HTTP method');
+});
+
+app.delete('/', (req, res) => {
+    return res.send('Received a DELETE HTTP method');
+});
+
+/* 
+cURL'ing http://localhost:3000 will, by default, use a HTTP get method.
+We can however specify the HTTP method, using the -X (or --request) flag.
+Doing this, we can access different routes of the express application.
+Using its API endpoints with an URI
+*/
+/* 
+This is one of the key aspects to REST: Using HTTP methods to perfor moperations on URIs, 
+most commonly refered to as CRUD operations for create, read, update and delete operations. 
+git */
 
 /* Expose a port defined in a hidden, safe, .env file to the express app */
 app.listen(process.env.PORT, () =>
