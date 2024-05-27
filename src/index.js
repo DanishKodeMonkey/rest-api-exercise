@@ -6,8 +6,28 @@ import { v4 as uuidv4 } from 'uuid';
 
 // we will import some data sets that we will use for this example
 // Not a real database, but good enough for the experiment.
-import users from '../database/users';
-import messages from '../database/messages';
+let users = {
+    1: {
+        id: '1',
+        username: 'Robin Wieruch',
+    },
+    2: {
+        id: '2',
+        username: 'Dave Davids',
+    },
+};
+let messages = {
+    1: {
+        id: '1',
+        text: 'Hello World',
+        userId: '1',
+    },
+    2: {
+        id: '2',
+        text: 'By World',
+        userId: '2',
+    },
+};
 
 // Express is ideal for creating and exposing APIs to communicate as a client to ea server application.
 // The key difference from a url routing direction to a API is the use of nouns rather than verbs, and
@@ -25,6 +45,30 @@ const app = express();
 /* There are two kinds of middleware in express.js, application level, and router level middleware. */
 /* Set up some application-middlewares and tie them to the app*/
 
+/* Custom middleware */
+/* It may be nessecary to facilitate custom middleware to pass requests-responses through */
+/* 
+For instance, here is one that helps determine who performed an action, like creating a message.
+This can be used t o determine a user during an request, and associate them with a user in the database 
+*/
+app.use((req, res, next) => {
+    // Determine a pseudo semi-authenticated user, and assign to me property of request object.
+    req.me = users[1];
+    // next passes the request to the next middleware
+    next();
+});
+// This will be useful for intercepting every incoming request, and determine from the HTTP
+// header if the user is authenticated or not. If so, the user is propagated to every express route used here.
+// This maintains a stateless express server, while a client sends information of the authenticated user.
+
+// This too, is a characteristic of REST.
+/* 
+It should be possible to create multiple server instances to balance traffic evenly between servers.
+This is where load balancing comes in. To clarify, the stateless term means to never maintain state, 
+like an authenticated user, outside of a database. So that the client always has to send its information
+along with every request. A server can then take each request and take care of authentication on 
+an application level. Providing a session state instead, to every Express route in the application.
+*/
 /* CORS is used to restrict access between web applications on a domain level. To work with this,
 we use a CORS package to apply a CORS header to every request by default. */
 app.use(cors());
@@ -163,9 +207,11 @@ app.put('/messages/:messageId', (req, res) => {
 });
 
 app.delete('/messages/:messageId', (req, res) => {
-    return res.send(
-        `DELETE HTTP method on user/${req.params.messageId} resource`
-    );
+    const { [req.params.messageId]: message, ...otherMessages } = messages;
+
+    messages = otherMessages;
+
+    return res.send(message);
 });
 
 // These paths work exactly like the users ones, but on a different resource.
