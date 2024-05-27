@@ -203,14 +203,31 @@ app.post('/messages', (req, res) => {
 
 */
 app.put('/messages/:messageId', (req, res) => {
-    return res.send(`PUT HTTP method on user/${req.params.messageId} resource`);
-});
+    // Similarily to deleting a message, we can extract the different parts of the request to put
+    // together an update operation.
+    const { messageId } = req.params;
+    const { text } = req.body;
 
+    // update the database contents with the text from the request
+    messages[messageId].text = text;
+
+    // and send the new object to the database.
+    return res.send(messages[messageId]);
+});
+/* 
+Example:
+❯ curl -X PUT -H "Content-Type:application/json" http://localhost:3000/messages/1 -d '{"text":"Hi again, World edited!"}'
+{"id":"1","text":"Hi again, World edited!","userId":"1"}%         
+*/
 app.delete('/messages/:messageId', (req, res) => {
+    // In order to delete a message, we will use a dynamic object property to exclude the message
+    // that we want to delete from the messages object.
     const { [req.params.messageId]: message, ...otherMessages } = messages;
 
+    // update the messages object wit hthe other messages, now excluding the deleted one.
     messages = otherMessages;
 
+    // send new messages object to database.
     return res.send(message);
 });
 
