@@ -36,6 +36,31 @@ app.use(express.urlencoded({ extended: true }));
 // keep in mind that this covers another aspect of REST. To use only a single payload format (like JSON)
 // and stick to it!
 
+/* Custom middleware */
+/* It may be nessecary to facilitate custom middleware to pass requests-responses through */
+/* 
+For instance, here is one that helps determine who performed an action, like creating a message.
+This can be used t o determine a user during an request, and associate them with a user in the database 
+*/
+app.use((req, res, next) => {
+    // Determine a pseudo semi-authenticated user, and assign to me property of request object.
+    req.me = users[1];
+    // next passes the request to the next middleware
+    next();
+});
+// This will be useful for intercepting every incoming request, and determine from the HTTP
+// header if the user is authenticated or not. If so, the user is propagated to every express route used here.
+// This maintains a stateless express server, while a client sends information of the authenticated user.
+
+// This too, is a characteristic of REST.
+/* 
+It should be possible to create multiple server instances to balance traffic evenly between servers.
+This is where load balancing comes in. To clarify, the stateless term means to never maintain state, 
+like an authenticated user, outside of a database. So that the client always has to send its information
+along with every request. A server can then take each request and take care of authentication on 
+an application level. Providing a session state instead, to every Express route in the application.
+*/
+
 /* Set up some routes */
 
 // the four main nouns to use are: GET, POST, PUT and DELETE
@@ -116,6 +141,8 @@ app.post('/messages', (req, res) => {
         id,
         // extract text payload from body of request HTTP method
         text: req.body.text,
+        // attached attained me.id property of request, as gained through custom middleware.
+        userId: req.me.id,
     };
 
     // assign the message, in the messages object by identifier.
