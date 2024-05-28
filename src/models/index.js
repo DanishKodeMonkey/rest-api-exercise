@@ -1,3 +1,5 @@
+// Taken from a concept explanation by Robin Wieruch
+
 let users = {
     1: {
         id: '1',
