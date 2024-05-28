@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Router } from 'express';
+import { verifyToken } from '..';
+const jwt = require('jsonwebtoken');
 
 const router = Router();
 router.get('/', (req, res) => {
@@ -10,24 +12,35 @@ router.get('/:messageId', (req, res) => {
     return res.send(req.context.models.messages[req.params.messageId]); // Returns a specific message based on the provided id
 });
 
-router.post('/', (req, res) => {
-    const id = uuidv4();
+// Protect route, by using a middleware for verifying the token (see entrypoint index.js)
+router.post('/', verifyToken, (req, res) => {
+    jwt.verify(req.token, 'secretKey', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        } else {
+            const id = uuidv4();
 
-    // establish the message object
-    const message = {
-        // use generaated id as a property in the message object.
-        id,
-        // extract text payload from body of request HTTP method
-        text: req.body.text,
-        // attached attained me.id property of request object, as gained through custom middleware.
-        userId: req.context.me.id,
-    };
+            // establish the message object
+            const message = {
+                // use generaated id as a property in the message object.
+                id,
+                // extract text payload from body of request HTTP method
+                text: req.body.text,
+                // attached attained me.id property of request object, as gained through custom middleware.
+                userId: req.context.me.id,
+            };
 
-    req.context.models.messages[id] = message;
+            req.context.models.messages[id] = message;
 
-    return res.send(message);
+            return res.send(message);
+        }
+    });
 });
+/* Example
+❯ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiMSIsInVzZXJuYW1lIjoiUm9iaW4gV2llcnVjaCJ9LCJpYXQiOjE3MTY4OTIzMzB9.DTrS2X9jQRcRFvLAbMLYa6IMwbYpuHIhAucYivR5hAQ" http://localhost:3000/messages -d '{"text":"Your message here"}'
 
+{"id":"9fbb4185-b34f-410b-b5ba-317674c3eaef","text":"Your message here","userId":"1"}%   
+*/
 router.delete('/:messageId', (req, res) => {
     const { [req.params.messageId]: message, ...otherMessages } =
         req.context.models.messages;
