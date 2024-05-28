@@ -6,28 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // we will import some data sets that we will use for this example
 // Not a real database, but good enough for the experiment.
-let users = {
-    1: {
-        id: '1',
-        username: 'Robin Wieruch',
-    },
-    2: {
-        id: '2',
-        username: 'Dave Davids',
-    },
-};
-let messages = {
-    1: {
-        id: '1',
-        text: 'Hello World',
-        userId: '1',
-    },
-    2: {
-        id: '2',
-        text: 'By World',
-        userId: '2',
-    },
-};
+import models from './models';
 
 // Express is ideal for creating and exposing APIs to communicate as a client to ea server application.
 // The key difference from a url routing direction to a API is the use of nouns rather than verbs, and
@@ -49,11 +28,16 @@ const app = express();
 /* It may be nessecary to facilitate custom middleware to pass requests-responses through */
 /* 
 For instance, here is one that helps determine who performed an action, like creating a message.
-This can be used t o determine a user during an request, and associate them with a user in the database 
+This can be used t o determine a user during an request, and associate them with a user in the database.
+Using a context container is not nessecarily needed, but is good practice to keep passed properties 
+in one place.
 */
 app.use((req, res, next) => {
-    // Determine a pseudo semi-authenticated user, and assign to me property of request object.
-    req.me = users[1];
+    // Create a property, context, that will associate the models object and asssign the req to user 1.
+    req.context = {
+        models,
+        me: models.users[1],
+    };
     // next passes the request to the next middleware
     next();
 });
@@ -111,7 +95,7 @@ an application level. Providing a session state instead, to every Express route 
 
 // An important aspect of REST is that every URI acts as a resource. like /users.
 app.get('/users', (req, res) => {
-    return res.send(Object.values(users)); //Returns the entire contents of the users dataset
+    return res.send(Object.values(req.context.models.users)); //Returns the entire contents of the users dataset
 });
 /* 
 ❯ curl http://localhost:3000/users            
@@ -120,7 +104,7 @@ app.get('/users', (req, res) => {
 
 // Lets add another path ,that will return a specific user, based on the provided id
 app.get('/users/:userId', (req, res) => {
-    return res.send(users[req.params.userId]); // Returns a specific user based on the provided id
+    return res.send(req.context.models.users[req.params.userId]); // Returns a specific user based on the provided id
 });
 /* 
 ❯ curl http://localhost:3000/users/1
@@ -169,10 +153,10 @@ D for Delete: HTTP DELETE
 // For instance, lets create another one for messages
 
 app.get('/messages', (req, res) => {
-    return res.send(Object.values(messages));
+    return res.send(Object.values(req.context.models.messages));
 });
 app.get('/messages/:messageId', (req, res) => {
-    return res.send(messages[req.params.messageId]);
+    return res.send(req.context.models.messages[req.params.messageId]);
 });
 
 app.post('/messages', (req, res) => {
@@ -186,11 +170,11 @@ app.post('/messages', (req, res) => {
         // extract text payload from body of request HTTP method
         text: req.body.text,
         // attached attained me.id property of request, as gained through custom middleware.
-        userId: req.me.id,
+        userId: req.context.me.id,
     };
 
     // assign the message, in the messages object by identifier.
-    messages[id] = message;
+    req.context.models.messages[id] = message;
 
     // return new message
     return res.send(message);
@@ -222,14 +206,24 @@ Example:
 app.delete('/messages/:messageId', (req, res) => {
     // In order to delete a message, we will use a dynamic object property to exclude the message
     // that we want to delete from the messages object.
-    const { [req.params.messageId]: message, ...otherMessages } = messages;
+    const { [req.params.messageId]: message, ...otherMessages } =
+        req.context.models.messages;
 
     // update the messages object wit hthe other messages, now excluding the deleted one.
-    messages = otherMessages;
+    req.context.models.messages = otherMessages;
 
     // send new messages object to database.
     return res.send(message);
 });
+
+// And since we, thanks to our custom middleware, have a pseudo-authenticated users, we can offer a
+// dedicated route for this too!
+app.get('/session', (req, res) => {
+    return res.send(req.context.models.users[req.context.me.id]);
+});
+// This is the first feature that is not entirely RESTful, since we are offering a very specific endpoint.
+// But that is okay, most APIs are not entirely RESTful, but rather RESTish anyway, the point is to
+// make it as RESTful as possible.
 
 // These paths work exactly like the users ones, but on a different resource.
 // ❯ curl -X DELETE http://localhost:3000/messages/1
