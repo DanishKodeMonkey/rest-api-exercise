@@ -8,10 +8,11 @@ const jwt = require('jsonwebtoken');
 router.get('/', (req, res) => {
     // Security:
 
-    // Get a Json web token, attach it with a user header.
+    // Get a Json web token, attach it with a user header. with secret, and expiration
     jwt.sign(
         { user: req.context.models.users[req.context.me.id] },
         'secretKey',
+        { expiresIn: '30s' },
         (err, token) => {
             res.json({ token });
         }
