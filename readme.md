@@ -64,6 +64,7 @@ The following Node packages were immensely useful throughout the project:
 -   [Dotenv](https://www.npmjs.com/package/dotenv): A package for loading environment variables from a `.env` file.
 -   [Express](http://expressjs.com/): The main framework used for handling HTTP requests and middleware.
 -   [UUID](https://www.npmjs.com/package/uuid): A collection of cryptographically strong random value generators.
+-   [Jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken): A great middleware for creating a JWT security layer.
 
 ## Environment Variables
 
@@ -99,6 +100,55 @@ app.use((req, res, next) => {
     next();
 });
 ```
+
+## Middleware
+
+### Token Generation and Verification with JSON Web Token (JWT)
+
+To enhance security, this project now includes token-based authentication using JSON Web Tokens (JWT). JWT is a compact, URL-safe means of representing claims between two parties. In this project, JWTs are used to authenticate users and secure routes.
+
+#### Token Generation
+
+When a user authenticates, a JWT is generated and sent back to the client. This token contains the user's identity and any additional claims required for authorization.
+
+```javascript
+// Generate a JSON web token
+jwt.sign(
+    { user: req.context.models.users[req.context.me.id] },
+    'secretKey', // Secret key used to sign the token
+    { expiresIn: '30s' }, // Set expiration time to 30 seconds
+    (err, token) => {
+        res.json({ token });
+    }
+);
+```
+
+The jwt.sign() function is used to generate a token. It takes the payload ({ user: req.context.models.users[req.context.me.id] }), a secret key ('secretKey') for signing the token, and an options object ({ expiresIn: '30s' }) to specify the token's expiration time. The generated token is then sent back to the client.
+
+#### Token Verification
+
+When a protected route is accessed, the client must include the JWT in the request headers. The server then verifies the token to authenticate the user.
+
+```javascript
+// Verify token function
+export function verifyToken(req, res, next) {
+    const bearerHeader = req.headers['authorization'];
+    if (typeof bearerHeader !== 'undefined') {
+        const bearer = bearerHeader.split(' ');
+        const bearerToken = bearer[1];
+        req.token = bearerToken;
+        next();
+    } else {
+        res.sendStatus(403); // Forbidden access if token is missing
+    }
+}
+```
+
+This middleware function (verifyToken) extracts the token from the request headers and verifies its authenticity. If the token is valid, the user is authenticated and can access the protected route; otherwise, access is forbidden.
+
+Now, with token-based authentication and token expiration, your API is more secure and resistant to unauthorized access.
+
+### Built in middleware
 
 Aside from that, some built-in middleware from express was also used, like the body parsing middleware.
 This parses JSON and URL-Encoded payloads
